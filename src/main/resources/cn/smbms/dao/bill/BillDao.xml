@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.smbms.dao.bill.BillDao">
+    <select id="getBillWithProviderName" parameterType="Bill" resultType="Bill" resultMap="billList" >
+        select b.*,p.proName from smbms_bill b,smbms_provider p
+        where b.productName like CONCAT ('%',#{productName},'%')
+          and b.providerId = #{providerId}
+          and b.isPayment = #{isPayment}
+          and b.providerId = p.id
+
+
+    </select>
+
+    <resultMap id="billList" type="Bill">
+        <result column="proName" property="providerName" ></result>
+    </resultMap>
+
+
+    <select id="getBillListByProductNameAndProvider" resultMap="roleMap" >
+        select b.billCode, b.productName ,p.proCode , p.proName , p.proContact ,p.proPhone,
+               b.totalPrice , b.isPayment
+        from smbms_bill b,smbms_provider p
+        where b.productName like CONCAT ('%',#{productName},'%')
+          and b.providerId = #{providerId}
+          and b.isPayment = #{isPaid}
+          and b.providerId = p.id
+
+    </select>
+
+    <resultMap id="roleMap" type="Bill" >
+        <result property="billCode" column="billCode" />
+        <result property="productName" column="productName" />
+        <result property="totalPrice" column="totalPrice" />
+        <result property="isPayment" column="isPayment" />
+        <association property="provider" javaType="Provider" resultMap="provideMap">
+        </association>
+    </resultMap>
+
+    <resultMap id="provideMap" type="Provider" >
+        <result property="proCode" column="proCode" />
+        <result property="proName" column="proName" />
+        <result property="proContact" column="proContact" />
+        <result property="proPhone" column="proPhone" />
+    </resultMap>
+
+</mapper>

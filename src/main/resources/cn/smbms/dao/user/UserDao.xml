@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.smbms.dao.user.UserDao">
+    <select id="getUserCount" resultType="int" >
+        select count(*) from smbms_user;
+    </select>
+
+    <select id="getUserList" resultType="User" >
+        select * from smbms_user;
+    </select>
+
+    <select id="getUserListByName" resultType="User" parameterType="String">
+        select * from smbms_user where userName like CONCAT("%" , #{name} , "%" );
+    </select>
+
+
+    <select id="getUserListByNameAndRole" parameterType="User" resultType="User">
+        <!--select * from smbms_user
+        <where>
+            <if test="userName!=null and userName!='' " >
+               and  userName like CONCAT("%" , #{userName} , "%" )
+            </if>
+            <if test="userRole!=null and userRole!='' " >
+                and userRole = #{userRole}
+            </if>
+        </where>-->
+        select * from smbms_user
+        <trim prefix="where" prefixOverrides="and | or " >
+            <if test="userName!= null and userName != '' ">
+                and userName like CONCAT("%" , #{userName} , "%" )
+            </if>
+            <if test="userRole!= null and userRole != '' ">
+                and userRole = #{userRole}
+            </if>
+        </trim>
+
+    </select>
+
+    <select id="getUserListByNameAndRole2" parameterType="map" resultType="User">
+        select * from smbms_user where userName like CONCAT("%" , #{userName} , "%" ) and userRole = #{userRole}
+    </select>
+
+    <select id="getUserListWithRoleByNameAndRole" resultType="User" resultMap="userList" parameterType="User" >
+        select smbms_user.* , smbms_role.roleName
+        from smbms_user , smbms_role
+        where smbms_user.userName like CONCAT("%" , #{userName} , "%" )
+          and smbms_user.userRole= #{userRole}
+          and smbms_user.userRole = smbms_role.id;
+    </select>
+
+    <resultMap id="userList" type="User" >
+    </resultMap>
+
+
+    <insert id="addUser" parameterType="User" >
+        insert into smbms_user (userCode,userName,userPassword)
+        values ( #{userCode},#{userName},#{userPassword})
+
+    </insert>
+
+    <update id="updateUser" parameterType="User" >
+        <!--update smbms_user
+        <set>
+            <if test="userCode != null and userCode !='' " >
+                userCode = #{userCode},
+            </if>
+            <if test="userCode != null and userCode !='' " >
+                userName=#{userName}
+            </if>
+        </set>
+        where id=#{id}-->
+        update smbms_user
+        <trim prefix="set" suffixOverrides="," suffix="where id=#{id}" >
+            <if test="userCode != null and userCode !='' " >
+                userCode = #{userCode},
+            </if>
+            <if test="userCode != null and userCode !='' " >
+                userName=#{userName},
+            </if>
+        </trim>
+
+
+
+
+    </update>
+
+    <update id="updatePwdById" >
+        update smbms_user set userPassword = #{pwd} where id =#{id};
+    </update>
+
+    <delete id="deleteUser" >
+        delete from smbms_user where id = #{id}
+    </delete>
+
+    <select id="getUserListByRoleId"  resultMap="userRoleResult" >
+        select u.*,r.id as r_id,r.roleCode,r.roleName from smbms_user u,smbms_role r
+        where u.userRole = #{userRoleId} and u.userRole = r.id
+    </select>
+
+    <resultMap id="userRoleResult" type="User" >
+        <id property="id" column="id"/>
+        <result property="userCode" column="userCode" />
+        <result property="userName" column="userName" />
+        <result property="userRole" column="userRole" />
+        <association property="role" javaType="Role" >
+            <id property="id" column="id"/>
+            <result property="roleCode" column="roleCode"/>
+            <result property="roleName" column="roleName"/>
+        </association>
+    </resultMap>
+
+    <select id="getUserListWithCusAddressById" resultMap="userMap" >
+        select *
+        from smbms_user u , smbms_address a
+        where u.id = #{id} and u.id=a.userId ;
+    </select>
+
+    <resultMap id="userMap" type="User" >
+        <id property="id" column="id"></id>
+        <result property="userName" column="userName" />
+        <collection property="CusAddress"   resultMap="addressMap">
+        </collection>
+    </resultMap>
+
+    <resultMap id="addressMap" type="Address">
+        <result property="contact" column="contact" ></result>
+        <result property="addressDesc" column="addressDesc"/>
+    </resultMap>
+
+    <select id="getUserListByRoleId_foreach" resultMap="userMapByRole" >
+        select * from smbms_user where userRole in
+        <foreach collection="array"  item="ids" open="(" separator="," close=")">
+            #{ids}
+        </foreach>
+    </select>
+
+    <select id="getUserListByRoleId_list" resultMap="userMapByRole" >
+        select * from smbms_user where userRole in
+        <foreach collection="list" item="roleList" open="(" separator="," close=")">
+            #{roleList}
+        </foreach>
+    </select>
+
+    <select id="getUserListByRoleId_map" resultMap="userMapByRole" >
+        select * from smbms_user where userRole in
+        <foreach collection="roleIds" item="map" open="(" separator="," close=")">
+            #{map}
+        </foreach>
+    </select>
+
+    <resultMap id="userMapByRole" type="User" >
+        <id property="id" column="id" />
+        <result property="userCode" column="userCode" />
+        <result property="userName" column="userName" />
+    </resultMap>
+
+
+
+    <select id="getUserList_choose" resultType="User" >
+        select  * from smbms_user where 1=1
+            <choose>
+                <when test="userCode != null and userCode !='' ">
+                   and  userCode like concat("%" , #{userCode} ,"%" )
+                </when>
+                <when test="userName != null and userName !='' ">
+                    and  userName like concat("%" , #{userName} ,"%" )
+                </when>
+                <when test="gender != null and gender !='' ">
+                    and gender =  #{gender}
+                </when>
+                <when test="phone != null and phone !='' ">
+                    and phone like concat("%" , #{phone} ,"%" )
+                </when>
+                <when test="address != null and address !='' ">
+                    and  address like concat("%" , #{address} ,"%" )
+                </when>
+
+            </choose>
+
+    </select>
+
+
+    <select id="getUserList_page" resultType="User" >
+        select  * from smbms_user
+        order by creationDate DESC limit #{from},#{pageSize}
+    </select>
+
+
+</mapper>
